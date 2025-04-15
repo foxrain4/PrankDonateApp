@@ -82,7 +82,7 @@
     const GOAL = 1_000_000_000;
 
     async function updateDisplay() {
-      const docRef = doc(db, 'donations', 'total');
+      const docRef = doc(db, 'counter', 'totaldonations');
       const docSnap = await getDoc(docRef);
       let total = 0;
       if (docSnap.exists()) {
@@ -96,7 +96,7 @@
 
     donateBtn.addEventListener('click', async () => {
       const donation = 100;
-      const docRef = doc(db, 'donations', 'total');
+      const docRef = doc(db, 'counter', 'totaldonations');
 
       const snap = await getDoc(docRef);
       if (!snap.exists()) {
