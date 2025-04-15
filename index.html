@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Help Fund Our Ridiculous Goal</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f0f0f0;
+      text-align: center;
+      padding: 2em;
+    }
+    h1 {
+      font-size: 2.5em;
+    }
+    .total {
+      font-size: 2em;
+      margin: 1em 0;
+      color: green;
+    }
+    .progress-bar {
+      width: 80%;
+      height: 20px;
+      background: #ddd;
+      margin: 1em auto;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .progress {
+      height: 100%;
+      background: #4caf50;
+      width: 0%;
+    }
+    button {
+      padding: 1em 2em;
+      font-size: 1.2em;
+      margin-top: 1em;
+      cursor: pointer;
+    }
+    .description {
+      max-width: 600px;
+      margin: 2em auto;
+      color: #555;
+    }
+  </style>
+  <!-- Firebase SDK -->
+  <script type="module">
+    // Import Firebase
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "prankdonateapp.firebaseapp.com",
+      projectId: "prankdonateapp",
+      storageBucket: "prankdonateapp.appspot.com",
+      messagingSenderId: "YOUR_MSG_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const goal = 1000000000; // $1 billion
+    const donationRef = doc(db, "stats", "donations");
+
+    const totalElem = document.getElementById("total");
+    const progressElem = document.querySelector(".progress");
+
+    async function init() {
+      const snapshot = await getDoc(donationRef);
+      if (!snapshot.exists()) {
+        await setDoc(donationRef, { amount: 0 });
+      }
+    }
+
+    async function donateFakeMoney() {
+      await updateDoc(donationRef, {
+        amount: Math.floor(Math.random() * 100) + 100  // Fake but funny
+      });
+    }
+
+    onSnapshot(donationRef, (docSnap) => {
+      const amount = docSnap.data().amount;
+      totalElem.textContent = `$${amount.toLocaleString()}`;
+      const percent = Math.min((amount / goal) * 100, 100);
+      progressElem.style.width = percent + "%";
+    });
+
+    window.addEventListener("DOMContentLoaded", init);
+    window.donateFakeMoney = donateFakeMoney;
+  </script>
+</head>
+<body>
+  <h1>Help Fund Our Website</h1>
+  <div class="total" id="total">$0</div>
+  <div class="progress-bar"><div class="progress"></div></div>
+  <button onclick="donateFakeMoney()">Donate $100</button>
+  <div class="description">
+    <p>This groundbreaking project aims to raise <strong>$1 billion</strong> to build the most unnecessary feature ever seen online.</p>
+    <p>Join the thousands of generous pranksters already supporting our cause. Every click counts (literally)!</p>
+  </div>
+</body>
+</html>
