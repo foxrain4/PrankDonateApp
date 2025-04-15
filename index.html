@@ -62,14 +62,14 @@
     import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
 
     const firebaseConfig = {
-  apiKey: "AIzaSyALJhbe82ShQAT0MFzlxiYqiiVbfmyTZDU",
-  authDomain: "prankdonateapp.firebaseapp.com",
-  projectId: "prankdonateapp",
-  storageBucket: "prankdonateapp.firebasestorage.app",
-  messagingSenderId: "146707436054",
-  appId: "1:146707436054:web:259fed523c0450b098db37",
-  measurementId: "G-FG2CPMN2PF"
-};
+      apiKey: "AIzaSyALJhbe82ShQAT0MFzlxiYqiiVbfmyTZDU",
+      authDomain: "prankdonateapp.firebaseapp.com",
+      projectId: "prankdonateapp",
+      storageBucket: "prankdonateapp.appspot.com",
+      messagingSenderId: "146707436054",
+      appId: "1:146707436054:web:259fed523c0450b098db37",
+      measurementId: "G-FG2CPMN2PF"
+    };
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
@@ -95,28 +95,24 @@
     }
 
     donateBtn.addEventListener('click', async () => {
-  const donation = 100;
-  const docRef = doc(db, 'donations', 'total');
+      const donation = 100;
+      const docRef = doc(db, 'donations', 'total');
 
-  // Ensure the doc exists
-  const snap = await getDoc(docRef);
-  if (!snap.exists()) {
-    await setDoc(docRef, { amount: 0 });
-  }
+      const snap = await getDoc(docRef);
+      if (!snap.exists()) {
+        await setDoc(docRef, { amount: 0 });
+      }
 
-  // Update the global donation amount
-  await updateDoc(docRef, {
-    amount: increment(donation)
-  });
+      await updateDoc(docRef, {
+        amount: increment(donation)
+      });
 
-  // Update local user donation
-  const currentUserTotal = parseInt(localStorage.getItem('yourDonation') || '0') + donation;
-  localStorage.setItem('yourDonation', currentUserTotal);
-  yourDonationDisplay.textContent = `$${currentUserTotal.toLocaleString()}`;
+      const currentUserTotal = parseInt(localStorage.getItem('yourDonation') || '0') + donation;
+      localStorage.setItem('yourDonation', currentUserTotal);
+      yourDonationDisplay.textContent = `$${currentUserTotal.toLocaleString()}`;
 
-  updateDisplay();
-});
-
+      updateDisplay();
+    });
 
     window.onload = () => {
       updateDisplay();
