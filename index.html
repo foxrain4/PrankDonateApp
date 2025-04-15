@@ -95,17 +95,28 @@
     }
 
     donateBtn.addEventListener('click', async () => {
-      const donation = 100;
-      await updateDoc(doc(db, 'donations', 'total'), {
-        amount: increment(donation)
-      });
+  const donation = 100;
+  const docRef = doc(db, 'donations', 'total');
 
-      const currentUserTotal = parseInt(localStorage.getItem('yourDonation') || '0') + donation;
-      localStorage.setItem('yourDonation', currentUserTotal);
-      yourDonationDisplay.textContent = `$${currentUserTotal.toLocaleString()}`;
+  // Ensure the doc exists
+  const snap = await getDoc(docRef);
+  if (!snap.exists()) {
+    await setDoc(docRef, { amount: 0 });
+  }
 
-      updateDisplay();
-    });
+  // Update the global donation amount
+  await updateDoc(docRef, {
+    amount: increment(donation)
+  });
+
+  // Update local user donation
+  const currentUserTotal = parseInt(localStorage.getItem('yourDonation') || '0') + donation;
+  localStorage.setItem('yourDonation', currentUserTotal);
+  yourDonationDisplay.textContent = `$${currentUserTotal.toLocaleString()}`;
+
+  updateDisplay();
+});
+
 
     window.onload = () => {
       updateDisplay();
