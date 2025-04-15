@@ -43,6 +43,20 @@
       margin-top: 40px;
     }
   </style>
+</head>
+<body>
+  <h1>Help Fund Our Website</h1>
+  <div class="progress-container">
+    <div id="progress" class="progress-bar"></div>
+  </div>
+  <p>Total Donations: <strong id="donationAmount">$0</strong></p>
+  <button id="donateBtn" class="donate-button">Donate $100</button>
+
+  <div class="section">
+    <h2>Your Contributions</h2>
+    <p>Total You've Donated: <strong id="yourDonation">$0</strong></p>
+  </div>
+
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js';
     import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
@@ -99,18 +113,5 @@
       yourDonationDisplay.textContent = `$${userTotal.toLocaleString()}`;
     };
   </script>
-</head>
-<body>
-  <h1>Help Fund Our Website</h1>
-  <div class="progress-container">
-    <div id="progress" class="progress-bar"></div>
-  </div>
-  <p>Total Donations: <strong id="donationAmount">$0</strong></p>
-  <button id="donateBtn" class="donate-button">Donate $100</button>
-
-  <div class="section">
-    <h2>Your Contributions</h2>
-    <p>Total You've Donated: <strong id="yourDonation">$0</strong></p>
-  </div>
 </body>
 </html>
