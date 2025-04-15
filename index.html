@@ -51,12 +51,12 @@
     import { getFirestore, doc, getDoc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.10.0/firebase-firestore.js";
 
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
+      apiKey: "1:146707436054:web:259fed523c0450b098db37",
       authDomain: "prankdonateapp.firebaseapp.com",
       projectId: "prankdonateapp",
       storageBucket: "prankdonateapp.appspot.com",
       messagingSenderId: "YOUR_MSG_ID",
-      appId: "YOUR_APP_ID"
+      appId: "AIzaSyALJhbe82ShQAT0MFzlxiYqiiVbfmyTZDU"
     };
 
     const app = initializeApp(firebaseConfig);
@@ -101,4 +101,54 @@
     <p>Join the thousands of generous pranksters already supporting our cause. Every click counts (literally)!</p>
   </div>
 </body>
+  <!-- Firebase SDKs -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyALJhbe82ShQAT0MFzlxiYqiiVbfmyTZDU",
+    authDomain: "prankdonateapp.firebaseapp.com",
+    projectId: "prankdonateapp",
+    storageBucket: "prankdonateapp.appspot.com",
+    messagingSenderId: "146707436054",
+    appId: "1:146707436054:web:259fed523c0450b098db37",
+    measurementId: "G-FG2CPMN2PF"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  async function fakeDonate() {
+    const docRef = doc(db, "counter", "donationTotal");
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      await updateDoc(docRef, {
+        amount: increment(100)
+      });
+    } else {
+      await setDoc(docRef, {
+        amount: 100
+      });
+    }
+
+    const updatedSnap = await getDoc(docRef);
+    const total = updatedSnap.data().amount;
+    document.getElementById("donationAmount").textContent = `$${total.toLocaleString()}`;
+  }
+
+  window.fakeDonate = fakeDonate;
+
+  // Load current amount on page load
+  window.addEventListener("DOMContentLoaded", async () => {
+    const docRef = doc(db, "counter", "donationTotal");
+    const docSnap = await getDoc(docRef);
+    const total = docSnap.exists() ? docSnap.data().amount : 0;
+    document.getElementById("donationAmount").textContent = `$${total.toLocaleString()}`;
+  });
+</script>
+<h1>Total Donations: <span id="donationAmount">$0</span></h1>
+<button onclick="fakeDonate()">Donate $100</button>
+
 </html>
