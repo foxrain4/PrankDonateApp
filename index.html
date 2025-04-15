@@ -64,7 +64,7 @@
 </head>
 <body>
   <h1>Help Fund Our Website</h1>
-  <p>Goal: $1,000,000,000</p>
+  <p>Goal: $1,000,000,000 (resets monthly)</p>
   <div class="progress-container">
     <div id="progress" class="progress-bar"></div>
   </div>
@@ -105,15 +105,30 @@
 
     const GOAL = 1_000_000_000;
 
+    async function maybeResetMonthly(docRef) {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        const lastReset = data.lastReset ? new Date(data.lastReset.seconds * 1000) : null;
+        if (!lastReset || lastReset.getMonth() !== currentMonth || lastReset.getFullYear() !== currentYear) {
+          await setDoc(docRef, { amount: 0, lastReset: new Date() });
+          return 0;
+        }
+        return data.amount;
+      } else {
+        await setDoc(docRef, { amount: 0, lastReset: new Date() });
+        return 0;
+      }
+    }
+
     async function updateDisplay() {
       const docRef = doc(db, 'counter', 'totaldonations');
-      const docSnap = await getDoc(docRef);
-      let total = 0;
-      if (docSnap.exists()) {
-        total = docSnap.data().amount;
-      } else {
-        await setDoc(docRef, { amount: 0 });
-      }
+      const total = await maybeResetMonthly(docRef);
+
       donationDisplay.textContent = `$${total.toLocaleString()}`;
       const progressPercent = Math.min((total / GOAL) * 100, 100);
       progressBar.style.width = `${progressPercent}%`;
@@ -135,7 +150,7 @@
       const docRef = doc(db, 'counter', 'totaldonations');
       const snap = await getDoc(docRef);
       if (!snap.exists()) {
-        await setDoc(docRef, { amount: 0 });
+        await setDoc(docRef, { amount: 0, lastReset: new Date() });
       }
 
       await updateDoc(docRef, {
