@@ -56,6 +56,11 @@
       margin-top: 20px;
       animation: pop 1s ease-out infinite alternate;
     }
+    .tier-display {
+      font-size: 1.2em;
+      margin-top: 10px;
+      color: #f0db4f;
+    }
     @keyframes pop {
       0% { transform: scale(1); }
       100% { transform: scale(1.05); }
@@ -77,6 +82,7 @@
   <div class="section">
     <h2>Your Contributions</h2>
     <p>Total You've Donated: <strong id="yourDonation">$0</strong></p>
+    <div id="userTier" class="tier-display"></div>
   </div>
 
   <script type="module">
@@ -102,8 +108,22 @@
     const donateBtn = document.getElementById('donateBtn');
     const donationInput = document.getElementById('donationInput');
     const celebrationMessage = document.getElementById('celebrationMessage');
+    const userTier = document.getElementById('userTier');
 
     const GOAL = 1_000_000_000;
+
+    function getTierLabel(amount) {
+      if (amount >= 10000) return "🎆 Mythic Legend";
+      if (amount >= 1000) return "👑 Platinum Backer";
+      if (amount >= 500) return "🥇 Gold Supporter";
+      if (amount >= 100) return "🥈 Silver Supporter";
+      if (amount >= 1) return "🥉 Bronze Supporter";
+      return "💤 No Tier Yet";
+    }
+
+    function updateUserTierDisplay(amount) {
+      userTier.textContent = `Your Tier: ${getTierLabel(amount)}`;
+    }
 
     async function maybeResetMonthly(docRef) {
       const now = new Date();
@@ -160,6 +180,7 @@
       const currentUserTotal = parseInt(localStorage.getItem('yourDonation') || '0') + donation;
       localStorage.setItem('yourDonation', currentUserTotal);
       yourDonationDisplay.textContent = `$${currentUserTotal.toLocaleString()}`;
+      updateUserTierDisplay(currentUserTotal);
 
       updateDisplay();
       donationInput.value = '';
@@ -169,6 +190,7 @@
       updateDisplay();
       const userTotal = parseInt(localStorage.getItem('yourDonation') || '0');
       yourDonationDisplay.textContent = `$${userTotal.toLocaleString()}`;
+      updateUserTierDisplay(userTotal);
     };
   </script>
 </body>
