@@ -50,14 +50,26 @@
     .section {
       margin-top: 40px;
     }
+    .celebration {
+      color: #ffeb3b;
+      font-size: 1.5em;
+      margin-top: 20px;
+      animation: pop 1s ease-out infinite alternate;
+    }
+    @keyframes pop {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.05); }
+    }
   </style>
 </head>
 <body>
   <h1>Help Fund Our Website</h1>
+  <p>Goal: $1,000,000,000</p>
   <div class="progress-container">
     <div id="progress" class="progress-bar"></div>
   </div>
   <p>Total Donations: <strong id="donationAmount">$0</strong></p>
+  <div id="celebrationMessage"></div>
 
   <input id="donationInput" class="donation-input" type="number" min="1" placeholder="Enter amount to donate" />
   <button id="donateBtn" class="donate-button">Donate</button>
@@ -89,6 +101,7 @@
     const yourDonationDisplay = document.getElementById('yourDonation');
     const donateBtn = document.getElementById('donateBtn');
     const donationInput = document.getElementById('donationInput');
+    const celebrationMessage = document.getElementById('celebrationMessage');
 
     const GOAL = 1_000_000_000;
 
@@ -102,7 +115,14 @@
         await setDoc(docRef, { amount: 0 });
       }
       donationDisplay.textContent = `$${total.toLocaleString()}`;
-      progressBar.style.width = `${Math.min((total / GOAL) * 100, 100)}%`;
+      const progressPercent = Math.min((total / GOAL) * 100, 100);
+      progressBar.style.width = `${progressPercent}%`;
+
+      if (total >= GOAL) {
+        celebrationMessage.innerHTML = "🎉 <span class='celebration'>Funding Goal Achieved! Thank You!</span> 🎉";
+      } else {
+        celebrationMessage.innerHTML = '';
+      }
     }
 
     donateBtn.addEventListener('click', async () => {
