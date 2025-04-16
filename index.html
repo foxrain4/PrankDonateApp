@@ -132,7 +132,7 @@
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js';
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, addDoc } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, addDoc, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyALJhbe82ShQAT0MFzlxiYqiiVbfmyTZDU",
@@ -147,6 +147,9 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    const GOAL = 1_000_000_000;
+    const MAX_DONATION = 1_000_000_000;
+
     const donationDisplay = document.getElementById('donationAmount');
     const progressBar = document.getElementById('progress');
     const yourDonationDisplay = document.getElementById('yourDonation');
@@ -155,9 +158,6 @@
     const nameInput = document.getElementById('nameInput');
     const celebrationMessage = document.getElementById('celebrationMessage');
     const userTier = document.getElementById('userTier');
-
-    const GOAL = 1_000_000_000;
-    const MAX_DONATION = 1_000_000_000;
 
     function getTierLabel(amount) {
       if (amount >= 1_000_000) return "🎆 Mythic Legend";
@@ -182,18 +182,33 @@
         const data = docSnap.data();
         const lastReset = data.lastReset ? new Date(data.lastReset.seconds * 1000) : null;
         if (!lastReset || lastReset.getMonth() !== currentMonth || lastReset.getFullYear() !== currentYear) {
-          const archivedAmount = data.amount || 0;
-          const archivedName = data.lastDonor || "Unknown";
+          // Calculate top donor from donations
+          const donationsSnap = await getDocs(collection(db, 'donations'));
+          const totals = {};
+          donationsSnap.forEach(doc => {
+            const d = doc.data();
+            if (!totals[d.name]) totals[d.name] = 0;
+            totals[d.name] += d.amount;
+          });
+          let topDonor = 'Unknown';
+          let maxAmount = 0;
+          for (const [name, amt] of Object.entries(totals)) {
+            if (amt > maxAmount) {
+              topDonor = name;
+              maxAmount = amt;
+            }
+          }
 
           await addDoc(collection(db, 'archive'), {
-            amount: archivedAmount,
-            topDonor: archivedName,
+            amount: data.amount || 0,
+            topDonor,
+            topAmount: maxAmount,
             resetMonth: now.toLocaleString('default', { month: 'long' }),
-            resetYear: now.getFullYear(),
-            archivedAt: new Date()
+            resetYear: currentYear,
+            archivedAt: now
           });
 
-          await setDoc(docRef, { amount: 0, lastReset: new Date() });
+          await setDoc(docRef, { amount: 0, lastReset: now });
           return 0;
         }
         return data.amount;
@@ -221,7 +236,7 @@
     donateBtn.addEventListener('click', async () => {
       const donation = parseInt(donationInput.value);
       let donorName = nameInput.value.trim();
-      if (!donorName) donorName = "Anonymous";
+      if (!donorName) donorName = `Anonymous#${Math.floor(Math.random() * 10000)}`;
 
       if (isNaN(donation) || donation <= 0) {
         alert('Please enter a valid donation amount.');
@@ -240,8 +255,13 @@
       }
 
       await updateDoc(docRef, {
-        amount: increment(donation),
-        lastDonor: donorName
+        amount: increment(donation)
+      });
+
+      await addDoc(collection(db, 'donations'), {
+        name: donorName,
+        amount: donation,
+        donatedAt: new Date()
       });
 
       const currentUserTotal = parseInt(localStorage.getItem('yourDonation') || '0') + donation;
