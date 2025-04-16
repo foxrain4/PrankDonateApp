@@ -39,13 +39,17 @@
       cursor: pointer;
       margin-top: 10px;
     }
-    .donation-input {
-      margin-top: 20px;
+    .donation-input,
+    .name-input {
+      margin-top: 10px;
       font-size: 18px;
       padding: 10px;
-      width: 200px;
+      width: 250px;
       border-radius: 6px;
       border: none;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
     }
     .section {
       margin-top: 40px;
@@ -103,6 +107,7 @@
   <div id="celebrationMessage"></div>
 
   <input id="donationInput" class="donation-input" type="number" min="1" placeholder="Enter amount to donate" />
+  <input id="nameInput" class="name-input" type="text" placeholder="Enter your name (optional)" />
   <button id="donateBtn" class="donate-button">Donate</button>
 
   <div class="section">
@@ -147,10 +152,12 @@
     const yourDonationDisplay = document.getElementById('yourDonation');
     const donateBtn = document.getElementById('donateBtn');
     const donationInput = document.getElementById('donationInput');
+    const nameInput = document.getElementById('nameInput');
     const celebrationMessage = document.getElementById('celebrationMessage');
     const userTier = document.getElementById('userTier');
 
     const GOAL = 1_000_000_000;
+    const MAX_DONATION = 1_000_000_000;
 
     function getTierLabel(amount) {
       if (amount >= 1_000_000) return "🎆 Mythic Legend";
@@ -175,12 +182,17 @@
         const data = docSnap.data();
         const lastReset = data.lastReset ? new Date(data.lastReset.seconds * 1000) : null;
         if (!lastReset || lastReset.getMonth() !== currentMonth || lastReset.getFullYear() !== currentYear) {
+          const archivedAmount = data.amount || 0;
+          const archivedName = data.lastDonor || "Unknown";
+
           await addDoc(collection(db, 'archive'), {
-            amount: data.amount || 0,
-            resetMonth: lastReset?.toLocaleString('default', { month: 'long' }) || 'Unknown',
-            resetYear: lastReset?.getFullYear() || 'Unknown',
+            amount: archivedAmount,
+            topDonor: archivedName,
+            resetMonth: now.toLocaleString('default', { month: 'long' }),
+            resetYear: now.getFullYear(),
             archivedAt: new Date()
           });
+
           await setDoc(docRef, { amount: 0, lastReset: new Date() });
           return 0;
         }
@@ -208,8 +220,16 @@
 
     donateBtn.addEventListener('click', async () => {
       const donation = parseInt(donationInput.value);
+      let donorName = nameInput.value.trim();
+      if (!donorName) donorName = "Anonymous";
+
       if (isNaN(donation) || donation <= 0) {
         alert('Please enter a valid donation amount.');
+        return;
+      }
+
+      if (donation > MAX_DONATION) {
+        alert(`Max donation is $${MAX_DONATION.toLocaleString()}. Try a smaller prank!`);
         return;
       }
 
@@ -220,7 +240,8 @@
       }
 
       await updateDoc(docRef, {
-        amount: increment(donation)
+        amount: increment(donation),
+        lastDonor: donorName
       });
 
       const currentUserTotal = parseInt(localStorage.getItem('yourDonation') || '0') + donation;
