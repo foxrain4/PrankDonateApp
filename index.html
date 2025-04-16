@@ -182,7 +182,6 @@
         const data = docSnap.data();
         const lastReset = data.lastReset ? new Date(data.lastReset.seconds * 1000) : null;
         if (!lastReset || lastReset.getMonth() !== currentMonth || lastReset.getFullYear() !== currentYear) {
-          // Calculate top donor from donations
           const donationsSnap = await getDocs(collection(db, 'donations'));
           const totals = {};
           donationsSnap.forEach(doc => {
@@ -249,14 +248,11 @@
       }
 
       const docRef = doc(db, 'counter', 'totaldonations');
-      const snap = await getDoc(docRef);
-      if (!snap.exists()) {
-        await setDoc(docRef, { amount: 0, lastReset: new Date() });
-      }
 
-      await updateDoc(docRef, {
+      // Use setDoc with merge to ensure the doc exists
+      await setDoc(docRef, {
         amount: increment(donation)
-      });
+      }, { merge: true });
 
       await addDoc(collection(db, 'donations'), {
         name: donorName,
