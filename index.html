@@ -39,17 +39,13 @@
       cursor: pointer;
       margin-top: 10px;
     }
-    .donation-input,
-    .name-input {
-      margin-top: 10px;
+    .donation-input {
+      margin-top: 20px;
       font-size: 18px;
       padding: 10px;
-      width: 250px;
+      width: 200px;
       border-radius: 6px;
       border: none;
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
     }
     .section {
       margin-top: 40px;
@@ -107,7 +103,6 @@
   <div id="celebrationMessage"></div>
 
   <input id="donationInput" class="donation-input" type="number" min="1" placeholder="Enter amount to donate" />
-  <input id="nameInput" class="name-input" type="text" placeholder="Enter your name (optional)" />
   <button id="donateBtn" class="donate-button">Donate</button>
 
   <div class="section">
@@ -132,7 +127,7 @@
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js';
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, addDoc, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, addDoc } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyALJhbe82ShQAT0MFzlxiYqiiVbfmyTZDU",
@@ -147,17 +142,15 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    const GOAL = 1_000_000_000;
-    const MAX_DONATION = 1_000_000_000;
-
     const donationDisplay = document.getElementById('donationAmount');
     const progressBar = document.getElementById('progress');
     const yourDonationDisplay = document.getElementById('yourDonation');
     const donateBtn = document.getElementById('donateBtn');
     const donationInput = document.getElementById('donationInput');
-    const nameInput = document.getElementById('nameInput');
     const celebrationMessage = document.getElementById('celebrationMessage');
     const userTier = document.getElementById('userTier');
+
+    const GOAL = 1_000_000_000;
 
     function getTierLabel(amount) {
       if (amount >= 1_000_000) return "🎆 Mythic Legend";
@@ -182,33 +175,13 @@
         const data = docSnap.data();
         const lastReset = data.lastReset ? new Date(data.lastReset.seconds * 1000) : null;
         if (!lastReset || lastReset.getMonth() !== currentMonth || lastReset.getFullYear() !== currentYear) {
-          // Archive the previous month
-          const donationsSnap = await getDocs(collection(db, 'donations'));
-          const totals = {};
-          donationsSnap.forEach(doc => {
-            const d = doc.data();
-            if (!totals[d.name]) totals[d.name] = 0;
-            totals[d.name] += d.amount;
-          });
-          let topDonor = 'Unknown';
-          let maxAmount = 0;
-          for (const [name, amt] of Object.entries(totals)) {
-            if (amt > maxAmount) {
-              topDonor = name;
-              maxAmount = amt;
-            }
-          }
-
           await addDoc(collection(db, 'archive'), {
             amount: data.amount || 0,
-            topDonor,
-            topAmount: maxAmount,
-            resetMonth: now.toLocaleString('default', { month: 'long' }),
-            resetYear: currentYear,
-            archivedAt: now
+            resetMonth: lastReset?.toLocaleString('default', { month: 'long' }) || 'Unknown',
+            resetYear: lastReset?.getFullYear() || 'Unknown',
+            archivedAt: new Date()
           });
-
-          await setDoc(docRef, { amount: 0, lastReset: now });
+          await setDoc(docRef, { amount: 0, lastReset: new Date() });
           return 0;
         }
         return data.amount;
@@ -235,16 +208,8 @@
 
     donateBtn.addEventListener('click', async () => {
       const donation = parseInt(donationInput.value);
-      let donorName = nameInput.value.trim();
-      if (!donorName) donorName = `Anonymous#${Math.floor(Math.random() * 10000)}`;
-
       if (isNaN(donation) || donation <= 0) {
         alert('Please enter a valid donation amount.');
-        return;
-      }
-
-      if (donation > MAX_DONATION) {
-        alert(`Max donation is $${MAX_DONATION.toLocaleString()}. Try a smaller prank!`);
         return;
       }
 
@@ -258,17 +223,7 @@
         amount: increment(donation)
       });
 
-      await addDoc(collection(db, 'donations'), {
-        name: donorName,
-        amount: donation,
-        donatedAt: new Date()
-      });
-
-      let stored = parseInt(localStorage.getItem('yourDonation'));
-      if (isNaN(stored)) {
-        stored = 0;
-      }
-      const currentUserTotal = stored + donation;
+      const currentUserTotal = parseInt(localStorage.getItem('yourDonation') || '0') + donation;
       localStorage.setItem('yourDonation', currentUserTotal);
       yourDonationDisplay.textContent = `$${currentUserTotal.toLocaleString()}`;
       updateUserTierDisplay(currentUserTotal);
@@ -278,14 +233,10 @@
     });
 
     window.onload = () => {
-      let stored = parseInt(localStorage.getItem('yourDonation'));
-      if (isNaN(stored)) {
-        stored = 0;
-        localStorage.setItem('yourDonation', '0');
-      }
-      yourDonationDisplay.textContent = `$${stored.toLocaleString()}`;
-      updateUserTierDisplay(stored);
       updateDisplay();
+      const userTotal = parseInt(localStorage.getItem('yourDonation') || '0');
+      yourDonationDisplay.textContent = `$${userTotal.toLocaleString()}`;
+      updateUserTierDisplay(userTotal);
     };
   </script>
 </body>
