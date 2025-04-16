@@ -12,9 +12,7 @@
       text-align: center;
       padding: 20px;
     }
-    h1 {
-      font-size: 2em;
-    }
+    h1 { font-size: 2em; }
     .progress-container {
       width: 80%;
       background-color: #333;
@@ -47,9 +45,7 @@
       border-radius: 6px;
       border: none;
     }
-    .section {
-      margin-top: 40px;
-    }
+    .section { margin-top: 40px; }
     .celebration {
       color: #ffeb3b;
       font-size: 1.5em;
@@ -71,22 +67,29 @@
       padding: 20px;
       border-radius: 10px;
     }
-    .tiers-description h3 {
-      color: #4caf50;
-      margin-bottom: 10px;
-    }
-    .tiers-description p {
-      margin: 10px 0;
-    }
+    .tiers-description h3 { color: #4caf50; margin-bottom: 10px; }
+    .tiers-description p { margin: 10px 0; }
     .wall-of-fame {
       margin-top: 40px;
       background: #1e1e1e;
       padding: 20px;
       border-radius: 10px;
     }
-    .wall-of-fame h2 {
-      color: #4caf50;
+    .wall-of-fame h2 { color: #4caf50; }
+
+    .recent-donors {
+      margin-top: 30px;
+      background: #222;
+      padding: 15px;
+      border-radius: 10px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
     }
+    .recent-donors h3 { color: #f0db4f; margin-bottom: 10px; }
+    .recent-donors ul { list-style: none; padding: 0; }
+    .recent-donors li { margin: 6px 0; }
+
     @keyframes pop {
       0% { transform: scale(1); }
       100% { transform: scale(1.05); }
@@ -120,6 +123,11 @@
     <p>🎆 <strong>Mythic Legend</strong> ($1,000,000+): Lifetime Founder status and secret lore codex access.</p>
   </div>
 
+  <div class="recent-donors">
+    <h3>Recent Donors</h3>
+    <ul id="recentDonorsList"></ul>
+  </div>
+
   <div class="wall-of-fame">
     <h2>📜 Wall of Fame</h2>
     <p>Coming soon: Monthly archive of all donations and legendary backers!</p>
@@ -127,7 +135,7 @@
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js';
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, addDoc } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, addDoc, query, orderBy, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyALJhbe82ShQAT0MFzlxiYqiiVbfmyTZDU",
@@ -149,8 +157,10 @@
     const donationInput = document.getElementById('donationInput');
     const celebrationMessage = document.getElementById('celebrationMessage');
     const userTier = document.getElementById('userTier');
+    const recentDonorsList = document.getElementById('recentDonorsList');
 
     const GOAL = 1_000_000_000;
+    const aliases = ["Mysterious Goose", "Sneaky Squirrel", "Glorious Onion", "Quantum Banana", "Spicy Cloud", "Grumpy Wizard", "Sparkle Hawk", "Hyper Potato", "Witty Lizard", "Cosmic Ferret"];
 
     function getTierLabel(amount) {
       if (amount >= 1_000_000) return "🎆 Mythic Legend";
@@ -206,6 +216,19 @@
       }
     }
 
+    function loadRecentDonors() {
+      const donorQuery = query(collection(db, 'donors'), orderBy('timestamp', 'desc'), limit(10));
+      onSnapshot(donorQuery, (snapshot) => {
+        recentDonorsList.innerHTML = '';
+        snapshot.forEach((doc) => {
+          const { alias, amount } = doc.data();
+          const li = document.createElement('li');
+          li.textContent = `${alias} donated $${amount}`;
+          recentDonorsList.appendChild(li);
+        });
+      });
+    }
+
     donateBtn.addEventListener('click', async () => {
       const donation = parseInt(donationInput.value);
       if (isNaN(donation) || donation <= 0) {
@@ -223,6 +246,12 @@
         amount: increment(donation)
       });
 
+      await addDoc(collection(db, 'donors'), {
+        alias: aliases[Math.floor(Math.random() * aliases.length)],
+        amount: donation,
+        timestamp: new Date()
+      });
+
       const currentUserTotal = parseInt(localStorage.getItem('yourDonation') || '0') + donation;
       localStorage.setItem('yourDonation', currentUserTotal);
       yourDonationDisplay.textContent = `$${currentUserTotal.toLocaleString()}`;
@@ -234,6 +263,7 @@
 
     window.onload = () => {
       updateDisplay();
+      loadRecentDonors();
       const userTotal = parseInt(localStorage.getItem('yourDonation') || '0');
       yourDonationDisplay.textContent = `$${userTotal.toLocaleString()}`;
       updateUserTierDisplay(userTotal);
