@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Prank Donate App</title>
   <style>
     body {
@@ -12,9 +12,7 @@
       text-align: center;
       padding: 20px;
     }
-    h1 {
-      font-size: 2em;
-    }
+    h1 { font-size: 2em; }
     .progress-container {
       width: 80%;
       background-color: #333;
@@ -75,22 +73,15 @@
       padding: 20px;
       border-radius: 10px;
     }
-    .tiers-description h3 {
-      color: #4caf50;
-      margin-bottom: 10px;
-    }
-    .tiers-description p {
-      margin: 10px 0;
-    }
+    .tiers-description h3 { color: #4caf50; margin-bottom: 10px; }
+    .tiers-description p { margin: 10px 0; }
     .wall-of-fame {
       margin-top: 40px;
       background: #1e1e1e;
       padding: 20px;
       border-radius: 10px;
     }
-    .wall-of-fame h2 {
-      color: #4caf50;
-    }
+    .wall-of-fame h2 { color: #4caf50; }
     @keyframes pop {
       0% { transform: scale(1); }
       100% { transform: scale(1.05); }
@@ -132,7 +123,7 @@
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js';
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, addDoc, query, where, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, addDoc, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyALJhbe82ShQAT0MFzlxiYqiiVbfmyTZDU",
@@ -197,7 +188,6 @@
               maxAmount = amt;
             }
           }
-
           await addDoc(collection(db, 'archive'), {
             amount: data.amount || 0,
             topDonor,
@@ -233,40 +223,48 @@
     }
 
     donateBtn.addEventListener('click', async () => {
-      const donation = parseInt(donationInput.value);
-      let donorName = nameInput.value.trim();
-      if (!donorName) donorName = `Anonymous#${Math.floor(Math.random() * 10000)}`;
+      try {
+        const donation = parseInt(donationInput.value);
+        let donorName = nameInput.value.trim();
+        if (!donorName) donorName = `Anonymous#${Math.floor(Math.random() * 10000)}`;
 
-      if (isNaN(donation) || donation <= 0) {
-        alert('Please enter a valid donation amount.');
-        return;
+        if (isNaN(donation) || donation <= 0) {
+          alert('Please enter a valid donation amount.');
+          return;
+        }
+
+        if (donation > MAX_DONATION) {
+          alert(`Max donation is $${MAX_DONATION.toLocaleString()}. Try a smaller prank!`);
+          return;
+        }
+
+        const docRef = doc(db, 'counter', 'totaldonations');
+        const snap = await getDoc(docRef);
+        if (!snap.exists()) {
+          await setDoc(docRef, { amount: 0, lastReset: new Date() });
+        }
+
+        await updateDoc(docRef, { amount: increment(donation) });
+
+        await addDoc(collection(db, 'donations'), {
+          name: donorName,
+          amount: donation,
+          donatedAt: new Date()
+        });
+
+        // ✅ Local update works now
+        const previous = parseInt(localStorage.getItem('yourDonation') || '0');
+        const newTotal = previous + donation;
+        localStorage.setItem('yourDonation', newTotal.toString());
+        yourDonationDisplay.textContent = `$${newTotal.toLocaleString()}`;
+        updateUserTierDisplay(newTotal);
+
+        updateDisplay();
+        donationInput.value = '';
+      } catch (err) {
+        console.error('Donation failed:', err);
+        alert('Oops! Something went wrong. Check console.');
       }
-
-      if (donation > MAX_DONATION) {
-        alert(`Max donation is $${MAX_DONATION.toLocaleString()}. Try a smaller prank!`);
-        return;
-      }
-
-      const docRef = doc(db, 'counter', 'totaldonations');
-
-      // Use setDoc with merge to ensure the doc exists
-      await setDoc(docRef, {
-        amount: increment(donation)
-      }, { merge: true });
-
-      await addDoc(collection(db, 'donations'), {
-        name: donorName,
-        amount: donation,
-        donatedAt: new Date()
-      });
-
-      const currentUserTotal = parseInt(localStorage.getItem('yourDonation') || '0') + donation;
-      localStorage.setItem('yourDonation', currentUserTotal);
-      yourDonationDisplay.textContent = `$${currentUserTotal.toLocaleString()}`;
-      updateUserTierDisplay(currentUserTotal);
-
-      updateDisplay();
-      donationInput.value = '';
     });
 
     window.onload = () => {
