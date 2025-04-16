@@ -78,6 +78,15 @@
     .tiers-description p {
       margin: 10px 0;
     }
+    .wall-of-fame {
+      margin-top: 40px;
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 10px;
+    }
+    .wall-of-fame h2 {
+      color: #4caf50;
+    }
     @keyframes pop {
       0% { transform: scale(1); }
       100% { transform: scale(1.05); }
@@ -111,9 +120,14 @@
     <p>🎆 <strong>Mythic Legend</strong> ($1,000,000+): Lifetime Founder status and secret lore codex access.</p>
   </div>
 
+  <div class="wall-of-fame">
+    <h2>📜 Wall of Fame</h2>
+    <p>Coming soon: Monthly archive of all donations and legendary backers!</p>
+  </div>
+
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js';
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, addDoc } from 'https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey: "AIzaSyALJhbe82ShQAT0MFzlxiYqiiVbfmyTZDU",
@@ -161,6 +175,12 @@
         const data = docSnap.data();
         const lastReset = data.lastReset ? new Date(data.lastReset.seconds * 1000) : null;
         if (!lastReset || lastReset.getMonth() !== currentMonth || lastReset.getFullYear() !== currentYear) {
+          await addDoc(collection(db, 'archive'), {
+            amount: data.amount || 0,
+            resetMonth: lastReset?.toLocaleString('default', { month: 'long' }) || 'Unknown',
+            resetYear: lastReset?.getFullYear() || 'Unknown',
+            archivedAt: new Date()
+          });
           await setDoc(docRef, { amount: 0, lastReset: new Date() });
           return 0;
         }
